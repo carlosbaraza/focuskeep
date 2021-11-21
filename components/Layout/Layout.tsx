@@ -11,7 +11,9 @@ export const Layout: FC<Props> = (props) => {
         <header>
           <Navbar />
         </header>
-        <div className="content">{props.children}</div>
+        <div className="content">
+          <div className="inner">{props.children}</div>
+        </div>
         <Footer />
       </div>
 
@@ -20,10 +22,21 @@ export const Layout: FC<Props> = (props) => {
           display: flex;
           flex-direction: column;
           min-height: 100vh;
+          width: 100%;
         }
 
         .content {
+          display: flex;
+          justify-content: center;
           flex-grow: 1;
+          background: var(--gray-100);
+        }
+
+        .inner {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+          max-width: var(--size-16);
         }
       `}</style>
     </>
