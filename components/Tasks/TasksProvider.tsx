@@ -114,7 +114,7 @@ export const TaskProvider: FC = ({ children }) => {
         ...task,
         isCompleted: task.completedTime >= task.time,
         complete() {
-          Notification.requestPermission().then(() => {
+          Notification.requestPermission?.()?.then(() => {
             if (document.hasFocus?.()) return;
             const notification = new Notification("Task completed!", {
               body: `${task.name} completed! You deserve a break`,
