@@ -13,9 +13,10 @@ export const TotalTime: FC<Props> = ({}) => {
   return (
     <>
       <div className="TotalTime">
-        <span>
-          Completed {formatTime(totalCompleted)} of {formatTime(total)}
-        </span>
+        <span>Completed</span>
+        <span className="time">{formatTime(totalCompleted)}</span>
+        <span>of</span>
+        <span className="time">{formatTime(total)}</span>
         <ProgressCircle progress={60} size={16} />
       </div>
 
@@ -29,6 +30,10 @@ export const TotalTime: FC<Props> = ({}) => {
 
         .TotalTime > :global(* + *) {
           margin-left: var(--size-02);
+        }
+
+        .time {
+          font-family: var(--font-family-mono);
         }
       `}</style>
     </>
