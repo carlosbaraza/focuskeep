@@ -157,17 +157,19 @@ export const TaskProvider: FC = ({ children }) => {
         ...task,
         isCompleted: task.completedTime >= task.time,
         complete() {
-          Notification?.requestPermission?.()?.then(() => {
-            if (document.hasFocus?.()) return;
-            const notification = new Notification("Task completed!", {
-              body: `${task.name} completed! You deserve a break`,
-              requireInteraction: true,
+          if ("Notification" in window) {
+            Notification.requestPermission?.()?.then(() => {
+              if (document.hasFocus?.()) return;
+              const notification = new Notification("Task completed!", {
+                body: `${task.name} completed! You deserve a break`,
+                requireInteraction: true,
+              });
+              notification.onclick = function (event) {
+                window.focus();
+                this.close();
+              };
             });
-            notification.onclick = function (event) {
-              window.focus();
-              this.close();
-            };
-          });
+          }
           updateTask({ ...task, isPlaying: false, completedTime: task.time });
         },
         reset() {
