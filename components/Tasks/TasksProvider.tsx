@@ -1,12 +1,16 @@
-import { createContext, FC, useContext, useEffect, useRef, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-
-type TaskStored = {
-  id: string;
-  name: string;
-  time: number; // seconds
-  completedTime: number; // seconds
-};
+import {
+  createContext,
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { TaskLists, TaskListStored } from "./service/TaskLists";
+import { Tasks, TaskStored } from "./service/Tasks";
+import { notEmpty } from "./service/utils";
 
 type TaskState = TaskStored & {
   isPlaying: boolean;
@@ -27,80 +31,53 @@ type Context = {
   tasks: Task[];
 };
 
-const setTaskLocalStorage = (task: Omit<TaskStored, "id"> & { id?: string }): string => {
-  const id = task.id || `task-${uuidv4()}`;
-  window.localStorage.setItem(id, JSON.stringify({ ...task, id }));
-  return id;
-};
-
-const saveTaskList = (taskIds: string[]) => {
-  window.localStorage.setItem("tasks", JSON.stringify(taskIds));
-};
-
 const TasksContext = createContext<Context>({
-  addTask: setTaskLocalStorage,
+  addTask: () => {},
   tasks: [],
 });
 
 export const useTaskContext = () => useContext(TasksContext);
 
-function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
-  return value !== null && value !== undefined;
-}
-
 export const TaskProvider: FC = ({ children }) => {
   const [tasks, setTasks] = useState<TaskState[]>([]);
+  const [list, setList] = useState<TaskListStored | null>(null);
   const tasksWithApi = useRef<Task[]>();
+  const previousTickDate = useRef(new Date());
 
-  const updateTask = (updatedTask: TaskState) => {
+  const updateTask = (updated: TaskState) => {
     const newTasks = tasks.map((task) => {
-      if (task.id === updatedTask.id) {
-        setTaskLocalStorage(updatedTask);
-        return updatedTask;
+      if (task.id === updated.id) {
+        Tasks.updateOne(task.id, updated);
+        return updated;
       } else {
         return task;
       }
     });
     setTasks(newTasks);
-    saveTaskList(newTasks.map((t) => t.id));
+
+    if (list) {
+      const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
+      TaskLists.updateOne(list.id, updatedList);
+    }
   };
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     // fetch data from local storage
-    let taskIds: string[] = [];
-    try {
-      const taskIdsJson = window.localStorage.getItem("tasks");
-      if (typeof taskIdsJson === "string") {
-        const taskIdsParsed = JSON.parse(taskIdsJson) as unknown;
-        if (
-          taskIdsParsed &&
-          Array.isArray(taskIdsParsed) &&
-          taskIdsParsed.every((t) => typeof t === "string")
-        ) {
-          taskIds = taskIdsParsed;
-        }
-      }
-    } catch (error) {
-      console.error("error parsing list of tasks", error);
-    }
+    const todayList = TaskLists.fetchToday();
+    setList(todayList);
 
     setTasks(
-      taskIds
-        .map((taskId) => window.localStorage.getItem(taskId))
-        .map((taskJson) => {
-          if (taskJson) {
-            try {
-              return JSON.parse(taskJson) as TaskStored;
-            } catch (error) {
-              console.error("error parsing stored task", error);
-            }
-          }
-        })
+      todayList.taskIds
+        .map((id) => Tasks.fetch(id))
         .filter(notEmpty)
         .map((t) => ({ ...t, isPlaying: false }))
     );
+  }, []);
 
-    setInterval(() => {
+  useEffect(() => {
+    fetchData();
+
+    const handler = setInterval(() => {
       tasksWithApi.current?.forEach((task) => {
         if (task.isCompleted) {
           if (task.isPlaying || task.completedTime > task.time) {
@@ -113,8 +90,19 @@ export const TaskProvider: FC = ({ children }) => {
           task.update({ ...task, completedTime: task.completedTime + 1 });
         }
       });
+
+      // Detect change of date
+      const tickDate = new Date();
+      if (previousTickDate.current.getDate() !== tickDate.getDate()) {
+        fetchData();
+      }
+      previousTickDate.current = tickDate;
     }, 1000);
-  }, []);
+
+    return () => {
+      clearInterval(handler);
+    };
+  }, [fetchData]);
 
   tasksWithApi.current = tasks.map(
     (task) =>
@@ -128,10 +116,13 @@ export const TaskProvider: FC = ({ children }) => {
           updateTask({ ...task, isPlaying: false, completedTime: 0 });
         },
         remove() {
-          window.localStorage.removeItem(task.id);
+          Tasks.remove(task.id);
           const newTasks = tasks.filter((t) => t.id !== task.id);
           setTasks(newTasks);
-          saveTaskList(newTasks.map((t) => t.id));
+          if (list) {
+            const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
+            TaskLists.updateOne(list.id, updatedList);
+          }
         },
         pause() {
           updateTask({ ...task, isPlaying: false });
@@ -140,7 +131,6 @@ export const TaskProvider: FC = ({ children }) => {
           updateTask({ ...task, isPlaying: true });
         },
         update(updatedTask) {
-          console.log("update", { ...task, ...updatedTask, id: task.id });
           updateTask({ ...task, ...updatedTask, id: task.id });
         },
       } as Task)
@@ -150,10 +140,13 @@ export const TaskProvider: FC = ({ children }) => {
     <TasksContext.Provider
       value={{
         addTask: (task) => {
-          const id = setTaskLocalStorage(task);
-          const newTasks = [...tasks, { ...task, id, isPlaying: false }];
+          const newTask = Tasks.create(task);
+          const newTasks = [...tasks, { ...newTask, isPlaying: false }];
           setTasks(newTasks);
-          saveTaskList(newTasks.map((t) => t.id));
+          if (list) {
+            const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
+            TaskLists.updateOne(list.id, updatedList);
+          }
         },
         tasks: tasksWithApi.current,
       }}
