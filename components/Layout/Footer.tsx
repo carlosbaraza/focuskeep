@@ -1,11 +1,17 @@
 import React, { FC } from "react";
+import { FaGithub } from "react-icons/fa";
 
 type Props = {};
 
 export const Footer: FC<Props> = (props) => {
   return (
     <>
-      <footer className="Footer">Made with ♥ in London</footer>
+      <footer className="Footer">
+        <span>Made with ♥ in London</span>
+        <a className="icon" href="https://github.com/carlosbaraza/focuskeep">
+          <FaGithub />
+        </a>
+      </footer>
 
       <style jsx>{`
         .Footer {
@@ -18,6 +24,14 @@ export const Footer: FC<Props> = (props) => {
           font-weight: bold;
           font-size: var(--font-size-1);
           line-height: var(--line-height-1);
+        }
+
+        .Footer > :global(* + *) {
+          margin-left: var(--size-05);
+        }
+
+        .icon {
+          font-size: var(--size-05);
         }
       `}</style>
     </>
