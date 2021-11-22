@@ -44,7 +44,6 @@ export class TaskLists {
     const todayList = all.find((list) => {
       const date = new Date(list.date);
       const today = new Date();
-      today.setDate(24);
       return (
         date.getDate() === today.getDate() &&
         date.getMonth() === today.getMonth() &&
