@@ -23,11 +23,11 @@ export type Task = TaskState & {
   complete(): void;
   reset(): void;
   remove(): void;
-  update(task: Partial<Omit<TaskState, "id">>): void;
+  update(task: Partial<Omit<TaskState, "id" | "updatedAt" | "createdAt">>): void;
 };
 
 type Context = {
-  addTask(task: Omit<TaskStored, "id">): void;
+  addTask(task: Omit<TaskStored, "id" | "updatedAt" | "createdAt">): void;
   tasks: Task[];
 };
 
