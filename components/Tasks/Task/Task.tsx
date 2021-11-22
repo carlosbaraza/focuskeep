@@ -65,6 +65,7 @@ export const Task: FC<Props> = ({ task }) => {
         .actions {
           display: flex;
           align-items: center;
+          flex-shrink: 0;
         }
 
         .actions > :global(* + *) {

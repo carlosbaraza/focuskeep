@@ -22,6 +22,8 @@ export const TaskName: FC<Props> = ({ task }) => {
           background: transparent;
           flex-grow: 1;
           border-bottom: 2px solid transparent;
+          width: 100%;
+          flex-shrink: 1;
         }
 
         .TaskName:focus {

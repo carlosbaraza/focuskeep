@@ -7,30 +7,38 @@ export const TaskInput: FC<Props> = (props) => {
   const { addTask } = useTaskContext();
   const [value, setValue] = useState("");
 
+  const onSubmit = () => {
+    addTask({
+      name: value,
+      time: 30 * 60,
+      completedTime: 0,
+    });
+    setValue("");
+  };
+
   return (
     <>
       <div className="TaskInput">
         <input
-          placeholder="Add new daily task"
+          placeholder="What do you want to focus on?"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyPress={(e) => {
             if (e.key === "Enter") {
-              addTask({
-                name: value,
-                time: 30 * 60,
-                completedTime: 0,
-              });
-              setValue("");
+              onSubmit();
             }
           }}
         />
+        <button className="add-button" disabled={!value} onClick={() => onSubmit()}>
+          Add
+        </button>
       </div>
 
       <style jsx>{`
         .TaskInput {
           display: flex;
           width: 100%;
+          position: relative;
         }
 
         input {
@@ -38,6 +46,24 @@ export const TaskInput: FC<Props> = (props) => {
           padding: var(--size-05);
           width: 100%;
           box-shadow: var(--box-shadow-2);
+        }
+
+        .add-button {
+          position: absolute;
+          right: var(--size-05);
+          height: var(--size-07);
+          background: var(--blue-400);
+          color: white;
+          padding: 0 var(--size-04);
+          top: 50%;
+          margin-top: -16px;
+          border-radius: var(--border-radius-5);
+          cursor: pointer;
+        }
+
+        .add-button:disabled {
+          background: var(--gray-300);
+          cursor: not-allowed;
         }
       `}</style>
     </>
