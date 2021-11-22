@@ -23,7 +23,7 @@ export const Home: NextPage = (props) => {
 
       <style jsx>{`
         .Home {
-          padding: var(--size-05);
+          padding: var(--size-07) var(--size-05);
           display: flex;
           flex-direction: column;
           flex-grow: 1;

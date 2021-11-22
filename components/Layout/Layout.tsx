@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { Container } from "./Container";
 import { Footer } from "./Footer";
 import { Navbar } from "./Navbar";
 
@@ -14,6 +15,7 @@ export const Layout: FC<Props> = (props) => {
         <div className="content">
           <div className="inner">{props.children}</div>
         </div>
+
         <Footer />
       </div>
 

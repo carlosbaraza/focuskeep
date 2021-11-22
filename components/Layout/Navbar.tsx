@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { Container } from "./Container";
 import { Logo } from "./Logo";
 
 type Props = {};
@@ -6,11 +7,17 @@ type Props = {};
 export const Navbar: FC<Props> = (props) => {
   return (
     <>
-      <div className="Navbar">
-        <Logo />
-      </div>
+      <Container className="FooterContainer">
+        <div className="Navbar">
+          <Logo />
+        </div>
+      </Container>
 
       <style jsx>{`
+        :global(.NavbarContainer) {
+          background: var(--gray-200);
+        }
+
         .Navbar {
           height: var(--size-08);
           background: var(--gray-200);
