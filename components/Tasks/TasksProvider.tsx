@@ -81,13 +81,17 @@ export const TaskProvider: FC = ({ children }) => {
       tasksWithApi.current?.forEach((task) => {
         if (task.isCompleted) {
           if (task.isPlaying || task.completedTime > task.time) {
-            return task.update({ ...task, isPlaying: false, completedTime: task.time });
+            task.complete();
           }
           return;
         }
 
         if (task.isPlaying) {
-          task.update({ ...task, completedTime: task.completedTime + 1 });
+          const completedTime = task.completedTime + 1;
+          task.update({ ...task, completedTime });
+          if (completedTime >= task.time) {
+            task.complete();
+          }
         }
       });
 
@@ -110,6 +114,16 @@ export const TaskProvider: FC = ({ children }) => {
         ...task,
         isCompleted: task.completedTime >= task.time,
         complete() {
+          Notification.requestPermission().then(() => {
+            const notification = new Notification("Task completed!", {
+              body: `${task.name} completed! You deserve a break`,
+              requireInteraction: true,
+            });
+            notification.onclick = function (event) {
+              window.focus();
+              this.close();
+            };
+          });
           updateTask({ ...task, isPlaying: false, completedTime: task.time });
         },
         reset() {
