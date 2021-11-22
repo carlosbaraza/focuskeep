@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { ClearAllDataAction } from "./ClearAllDataAction";
 import { TaskInput } from "./TaskInput";
 import { TaskList } from "./TaskList";
 import { TaskProvider } from "./TasksProvider";
@@ -13,6 +14,9 @@ export const Tasks: FC<Props> = (props) => {
           <h1>Focused tasks for today</h1>
           <TaskList />
           <TaskInput />
+          <div>
+            <ClearAllDataAction />
+          </div>
         </div>
       </TaskProvider>
 
