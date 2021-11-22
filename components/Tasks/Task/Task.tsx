@@ -15,6 +15,7 @@ export const Task: FC<Props> = ({ task }) => {
     <>
       <div className="Task">
         <CheckButton
+          progress={(task.completedTime / task.time) * 100}
           onComplete={() => {
             task.complete();
           }}

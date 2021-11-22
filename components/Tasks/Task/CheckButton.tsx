@@ -1,14 +1,16 @@
 import classNames from "classnames";
 import React, { FC } from "react";
 import { FaCheck, FaRedo } from "react-icons/fa";
+import { ProgressCircle } from "../../common/ProgressCircle";
 
 type Props = {
+  progress: number;
   checked: boolean;
   onComplete(): void;
   onReset(): void;
 };
 
-export const CheckButton: FC<Props> = ({ checked, onComplete, onReset }) => {
+export const CheckButton: FC<Props> = ({ checked, progress, onComplete, onReset }) => {
   return (
     <>
       <button
@@ -23,27 +25,44 @@ export const CheckButton: FC<Props> = ({ checked, onComplete, onReset }) => {
           }
         }}
       >
-        <span className="reset">
-          <FaRedo />
-        </span>
-        <FaCheck />
+        <ProgressCircle absolute progress={progress} strokeColor="#1f2937">
+          <div className="inner">
+            <span className="reset">
+              <FaRedo />
+            </span>
+            <FaCheck />
+          </div>
+        </ProgressCircle>
       </button>
 
       <style jsx>{`
         .CheckButton {
           position: relative;
-          background: var(--gray-200);
           color: var(--gray-400);
-          padding: var(--size-03);
-          border-radius: var(--border-radius-full);
           width: var(--size-07);
           height: var(--size-07);
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: var(--transition-transform);
+          transform: scale(1);
         }
 
-        .checked {
+        .inner {
+          border-radius: var(--border-radius-full);
+          padding: var(--size-03);
+          background: var(--gray-200);
+          transition: var(--transition-all);
+          transition-delay: var(--transition-delay-0);
+        }
+
+        .CheckButton:focus,
+        .CheckButton:hover {
+          outline: none;
+          transform: scale(1.1);
+        }
+
+        .checked .inner {
           background: var(--gray-800);
           color: var(--white);
         }
@@ -51,10 +70,10 @@ export const CheckButton: FC<Props> = ({ checked, onComplete, onReset }) => {
         .reset {
           display: block;
           position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
+          top: 2px;
+          left: 2px;
+          width: calc(100% - 4px);
+          height: calc(100% - 4px);
           display: flex;
           align-items: center;
           justify-content: center;

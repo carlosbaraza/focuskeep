@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { ProgressCircle } from "../common/ProgressCircle";
 import { formatTime } from "./Task/Timer";
 import { Task, useTaskContext } from "./TasksProvider";
 
@@ -12,13 +13,22 @@ export const TotalTime: FC<Props> = ({}) => {
   return (
     <>
       <div className="TotalTime">
-        Completed {formatTime(totalCompleted)} of {formatTime(total)}
+        <span>
+          Completed {formatTime(totalCompleted)} of {formatTime(total)}
+        </span>
+        <ProgressCircle progress={60} size={16} />
       </div>
 
       <style jsx>{`
         .TotalTime {
+          display: flex;
+          align-items: center;
           font-size: var(--font-size-1);
           line-height: var(--line-height-1);
+        }
+
+        .TotalTime > :global(* + *) {
+          margin-left: var(--size-02);
         }
       `}</style>
     </>
