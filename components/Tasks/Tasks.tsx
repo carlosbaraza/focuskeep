@@ -3,6 +3,7 @@ import { ClearAllDataAction } from "./ClearAllDataAction";
 import { TaskInput } from "./TaskInput";
 import { TaskList } from "./TaskList";
 import { TaskProvider } from "./TasksProvider";
+import { TotalTime } from "./TotalTime";
 
 type Props = {};
 
@@ -11,7 +12,10 @@ export const Tasks: FC<Props> = (props) => {
     <>
       <TaskProvider>
         <div className="Tasks">
-          <h1>Focused tasks for today</h1>
+          <header>
+            <h1>Focused tasks for today</h1>
+            <TotalTime />
+          </header>
           <TaskList />
           <TaskInput />
           <div>

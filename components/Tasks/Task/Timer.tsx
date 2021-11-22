@@ -19,9 +19,14 @@ function pad(n: number, width: number, z: string): string {
 }
 
 export const formatTime = (time: number): string => {
-  const minutes = Math.floor(time / 60);
+  const hours = Math.floor(time / 60 / 60);
+  const minutes = Math.floor(time / 60) % 60;
   const seconds = time % 60;
-  return `${pad(minutes, 2, "0")}:${pad(seconds, 2, "0")}`;
+  if (hours > 0) {
+    return `${pad(hours, 2, "0")}:${pad(minutes, 2, "0")}:${pad(seconds, 2, "0")}`;
+  } else {
+    return `${pad(minutes, 2, "0")}:${pad(seconds, 2, "0")}`;
+  }
 };
 
 export const Timer: FC<Props> = ({ task }) => {
