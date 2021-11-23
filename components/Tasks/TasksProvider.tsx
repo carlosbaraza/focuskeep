@@ -8,6 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { getLogoProgressSvg } from "../common/LogoProgress";
+import { useLogoContext } from "../common/LogoProvider";
 import { db } from "./db";
 import { TaskListStored } from "./db";
 import { TaskStored } from "./db";
@@ -46,26 +48,33 @@ export const TaskProvider: FC = ({ children }) => {
   const [list, setList] = useState<TaskListStored | null>(null);
   const tasksWithApi = useRef<Task[]>();
   const previousTickDate = useRef(new Date());
+  const requestTick = useRef(false);
 
-  const updateTask = async (updated: TaskState) => {
-    const newTasks = tasks.map((task) => {
-      if (task.id && task.id === updated.id) {
-        db.tasks.update(task.id, {
-          name: updated.name,
-          time: updated.time,
-          completedTime: updated.completedTime,
-        });
-        return updated;
-      } else {
-        return task;
-      }
-    });
-    setTasks(newTasks);
+  const updateTask = useCallback(
+    async (updated: TaskState) => {
+      const newTasks = tasks.map((task) => {
+        if (task.id && task.id === updated.id) {
+          db.tasks.update(task.id, {
+            name: updated.name,
+            time: updated.time,
+            completedTime: updated.completedTime,
+          });
+          return updated;
+        } else {
+          return task;
+        }
+      });
+      setTasks(newTasks);
+    },
+    [tasks]
+  );
 
-    if (list && list.id) {
-      await db.taskLists.update(list.id, { taskIds: newTasks.map((t) => t.id) });
+  useEffect(() => {
+    if (requestTick.current) {
+      intervalTick.current();
+      requestTick.current = false;
     }
-  };
+  }, [requestTick, tasks]);
 
   const fetchData = useCallback(async () => {
     // fetch data from local storage
@@ -117,86 +126,116 @@ export const TaskProvider: FC = ({ children }) => {
     );
   }, []);
 
+  const { setLogoProgress } = useLogoContext();
+
+  const intervalTick = useRef(() => {
+    const tickDate = new Date();
+
+    tasksWithApi.current?.forEach((task) => {
+      if (task.isCompleted) {
+        if (task.isPlaying || task.completedTime > task.time) {
+          task.complete();
+        }
+        return;
+      }
+    });
+
+    const playingTask = tasksWithApi.current?.find((task) => task.isPlaying);
+    if (playingTask) {
+      const completedTime =
+        playingTask.completedTime +
+        (tickDate.getTime() - previousTickDate.current.getTime()) / 1000;
+      playingTask.update({ ...playingTask, completedTime });
+
+      const progress = (completedTime / playingTask.time) * 100;
+      setLogoProgress(progress);
+
+      if (completedTime >= playingTask.time) {
+        playingTask.complete();
+      }
+    } else {
+      const { total, completed } = (tasksWithApi.current || []).reduce(
+        (acc, task) => {
+          acc.total += task.time;
+          acc.completed += task.completedTime;
+          return acc;
+        },
+        { total: 0, completed: 0 }
+      );
+      const progress = completed > 0 ? (completed / total) * 100 : 60;
+      setLogoProgress(progress);
+    }
+
+    // Detect change of date
+    if (previousTickDate.current.getDate() !== tickDate.getDate()) {
+      fetchData();
+    }
+    previousTickDate.current = tickDate;
+  });
+
   useEffect(() => {
     fetchData();
-
     const handler = setInterval(() => {
-      tasksWithApi.current?.forEach((task) => {
-        if (task.isCompleted) {
-          if (task.isPlaying || task.completedTime > task.time) {
-            task.complete();
-          }
-          return;
-        }
-
-        if (task.isPlaying) {
-          const completedTime = task.completedTime + 1;
-          task.update({ ...task, completedTime });
-          if (completedTime >= task.time) {
-            task.complete();
-          }
-        }
-      });
-
-      // Detect change of date
-      const tickDate = new Date();
-      if (previousTickDate.current.getDate() !== tickDate.getDate()) {
-        fetchData();
-      }
-      previousTickDate.current = tickDate;
+      intervalTick.current();
     }, 1000);
-
     return () => {
       clearInterval(handler);
     };
-  }, [fetchData]);
+  }, [fetchData, setLogoProgress]);
 
-  tasksWithApi.current = tasks.map(
-    (task) =>
-      ({
-        ...task,
-        isCompleted: task.completedTime >= task.time,
-        complete() {
-          if ("Notification" in window) {
-            Notification.requestPermission?.()?.then(() => {
-              if (document.hasFocus?.()) return;
-              const notification = new Notification("Task completed!", {
-                body: `${task.name} completed! You deserve a break`,
-                requireInteraction: true,
+  tasksWithApi.current = useMemo(() => {
+    return tasks.map(
+      (task) =>
+        ({
+          ...task,
+          isCompleted: task.completedTime >= task.time,
+          complete() {
+            if ("Notification" in window) {
+              Notification.requestPermission?.()?.then(() => {
+                if (document.hasFocus?.()) return;
+                const notification = new Notification("Task completed!", {
+                  body: `${task.name} completed! You deserve a break`,
+                  requireInteraction: true,
+                });
+                notification.onclick = function (event) {
+                  window.focus();
+                  this.close();
+                };
               });
-              notification.onclick = function (event) {
-                window.focus();
-                this.close();
-              };
-            });
-          }
-          updateTask({ ...task, isPlaying: false, completedTime: task.time });
-        },
-        reset() {
-          updateTask({ ...task, isPlaying: false, completedTime: 0 });
-        },
-        remove() {
-          if (!task.id) return;
-          db.tasks.delete(task.id);
-          const newTasks = tasks.filter((t) => t.id !== task.id);
-          setTasks(newTasks);
-          if (list) {
-            if (!list.id) return;
-            const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
-            db.taskLists.update(list.id, updatedList);
-          }
-        },
-        pause() {
-          updateTask({ ...task, isPlaying: false });
-        },
-        start() {
-          updateTask({ ...task, isPlaying: true });
-        },
-        update(updatedTask) {
-          updateTask({ ...task, ...updatedTask, id: task.id });
-        },
-      } as Task)
-  );
+            }
+            updateTask({ ...task, isPlaying: false, completedTime: task.time });
+            requestTick.current = true;
+          },
+          reset() {
+            task.isPlaying = false;
+            this.isPlaying = false;
+            updateTask({ ...task, isPlaying: false, completedTime: 0 });
+            requestTick.current = true;
+          },
+          remove() {
+            if (!task.id) return;
+            db.tasks.delete(task.id);
+            const newTasks = tasks.filter((t) => t.id !== task.id);
+            setTasks(newTasks);
+            requestTick.current = true;
+          },
+          pause() {
+            task.isPlaying = false;
+            this.isPlaying = false;
+            updateTask({ ...task, isPlaying: false });
+          },
+          start() {
+            (tasksWithApi.current || []).filter((t) => t.isPlaying).forEach((t) => t.pause());
+            task.isPlaying = true;
+            this.isPlaying = true;
+            updateTask({ ...task, isPlaying: true });
+          },
+          update(updatedTask) {
+            updateTask({ ...task, ...updatedTask, id: task.id });
+          },
+        } as Task)
+    );
+  }, [tasks, updateTask]);
 
   return (
     <TasksContext.Provider

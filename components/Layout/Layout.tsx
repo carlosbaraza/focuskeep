@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { LogoProvider } from "../common/LogoProvider";
 import { Container } from "./Container";
 import { Footer } from "./Footer";
 import { Navbar } from "./Navbar";
@@ -8,16 +9,18 @@ type Props = {};
 export const Layout: FC<Props> = (props) => {
   return (
     <>
-      <div className="Layout">
-        <header>
-          <Navbar />
-        </header>
-        <div className="content">
-          <div className="inner">{props.children}</div>
-        </div>
+      <LogoProvider>
+        <div className="Layout">
+          <header>
+            <Navbar />
+          </header>
+          <div className="content">
+            <div className="inner">{props.children}</div>
+          </div>
 
-        <Footer />
-      </div>
+          <Footer />
+        </div>
+      </LogoProvider>
 
       <style jsx>{`
         .Layout {

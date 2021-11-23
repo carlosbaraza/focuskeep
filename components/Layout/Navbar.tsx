@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Container } from "./Container";
-import { Logo } from "./Logo";
+import { Logo } from "../common/Logo";
 
 type Props = {};
 
