@@ -1,3 +1,1 @@
-export function util() {
-  console.log("Test");
-}
+export function util() {}
