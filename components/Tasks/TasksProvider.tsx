@@ -8,9 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { TaskLists, TaskListStored } from "./service/TaskLists";
-import { Tasks, TaskStored } from "./service/Tasks";
-import { notEmpty } from "./service/utils";
+import { db } from "./db";
+import { TaskListStored } from "./db";
+import { TaskStored } from "./db";
+import { notEmpty } from "./db/utils";
 
 type TaskState = TaskStored & {
   isPlaying: boolean;
@@ -29,11 +30,13 @@ export type Task = TaskState & {
 type Context = {
   addTask(task: Omit<TaskStored, "id" | "updatedAt" | "createdAt">): void;
   tasks: Task[];
+  list: TaskListStored | null;
 };
 
 const TasksContext = createContext<Context>({
   addTask: () => {},
   tasks: [],
+  list: null,
 });
 
 export const useTaskContext = () => useContext(TasksContext);
@@ -44,10 +47,14 @@ export const TaskProvider: FC = ({ children }) => {
   const tasksWithApi = useRef<Task[]>();
   const previousTickDate = useRef(new Date());
 
-  const updateTask = (updated: TaskState) => {
+  const updateTask = async (updated: TaskState) => {
     const newTasks = tasks.map((task) => {
-      if (task.id === updated.id) {
-        Tasks.updateOne(task.id, updated);
+      if (task.id && task.id === updated.id) {
+        db.tasks.update(task.id, {
+          name: updated.name,
+          time: updated.time,
+          completedTime: updated.completedTime,
+        });
         return updated;
       } else {
         return task;
@@ -55,22 +62,58 @@ export const TaskProvider: FC = ({ children }) => {
     });
     setTasks(newTasks);
 
-    if (list) {
-      const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
-      TaskLists.updateOne(list.id, updatedList);
+    if (list && list.id) {
+      await db.taskLists.update(list.id, { taskIds: newTasks.map((t) => t.id) });
     }
   };
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
     // fetch data from local storage
-    const todayList = TaskLists.fetchToday();
+    let today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    let tomorrow = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      new Date().getDate() + 1
+    );
+
+    let todayList = await (
+      await db.taskLists.where("date").between(today, tomorrow, true, false)
+    ).first();
+
+    if (!todayList) {
+      let latest = await (await db.taskLists.orderBy("date").reverse()).first();
+      let latestTasks = latest?.id
+        ? await db.tasks.where("listId").equals(latest.id).toArray()
+        : [];
+
+      const id = await db.taskLists.add({ date: new Date() });
+      const newList = await db.taskLists.get(id);
+      const newListId = newList?.id;
+      if (!newListId) return;
+      todayList = newList;
+
+      await Promise.all(
+        latestTasks.map(async (task) =>
+          db.tasks.add({
+            name: task.name,
+            listId: newListId,
+            time: task.time,
+            completedTime: 0,
+          })
+        )
+      );
+    }
+
+    if (!todayList.id) {
+      throw new Error("List does not have an ID");
+    }
     setList(todayList);
 
     setTasks(
-      todayList.taskIds
-        .map((id) => Tasks.fetch(id))
-        .filter(notEmpty)
-        .map((t) => ({ ...t, isPlaying: false }))
+      (await db.tasks.where("listId").equals(todayList.id).toArray()).map((t) => ({
+        ...t,
+        isPlaying: false,
+      }))
     );
   }, []);
 
@@ -131,12 +174,14 @@ export const TaskProvider: FC = ({ children }) => {
           updateTask({ ...task, isPlaying: false, completedTime: 0 });
         },
         remove() {
-          Tasks.remove(task.id);
+          if (!task.id) return;
+          db.tasks.delete(task.id);
           const newTasks = tasks.filter((t) => t.id !== task.id);
           setTasks(newTasks);
           if (list) {
+            if (!list.id) return;
             const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
-            TaskLists.updateOne(list.id, updatedList);
+            db.taskLists.update(list.id, updatedList);
           }
         },
         pause() {
@@ -154,15 +199,20 @@ export const TaskProvider: FC = ({ children }) => {
   return (
     <TasksContext.Provider
       value={{
-        addTask: (task) => {
-          const newTask = Tasks.create(task);
+        addTask: async (task) => {
+          const newTaskId = await db.tasks.add(task);
+          const newTask = await db.tasks.get(newTaskId);
+          if (!newTask) {
+            throw new Error("Error saving task");
+          }
           const newTasks = [...tasks, { ...newTask, isPlaying: false }];
           setTasks(newTasks);
-          if (list) {
+          if (list && list.id) {
             const updatedList = { ...list, taskIds: newTasks.map((t) => t.id) };
-            TaskLists.updateOne(list.id, updatedList);
+            db.taskLists.update(list.id, updatedList);
           }
         },
+        list,
         tasks: tasksWithApi.current,
       }}
     >

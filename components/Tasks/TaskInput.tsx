@@ -4,14 +4,16 @@ import { useTaskContext } from "./TasksProvider";
 type Props = {};
 
 export const TaskInput: FC<Props> = (props) => {
-  const { addTask } = useTaskContext();
+  const { addTask, list } = useTaskContext();
   const [value, setValue] = useState("");
 
   const onSubmit = () => {
+    if (!list?.id) return;
     addTask({
       name: value,
       time: 30 * 60,
       completedTime: 0,
+      listId: list.id,
     });
     setValue("");
   };

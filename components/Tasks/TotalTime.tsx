@@ -17,7 +17,7 @@ export const TotalTime: FC<Props> = ({}) => {
         <span className="time">{formatTime(totalCompleted)}</span>
         <span>of</span>
         <span className="time">{formatTime(total)}</span>
-        <ProgressCircle progress={60} size={16} />
+        <ProgressCircle progress={(totalCompleted / total) * 100} size={16} />
       </div>
 
       <style jsx>{`
