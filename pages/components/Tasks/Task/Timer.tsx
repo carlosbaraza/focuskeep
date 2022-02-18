@@ -3,8 +3,8 @@ import { FaPauseCircle, FaPlayCircle } from "react-icons/fa";
 import { Task } from "../TasksProvider";
 import { EditableTime } from "./EditableTime";
 import { IconButton } from "./IconButton";
-import { PauseButton } from "./PauseButton";
-import { PlayButton } from "./PlayButton";
+import { PauseButton } from "../../PauseButton";
+import { PlayButton } from "../../PlayButton";
 
 type Props = {
   task: Task;

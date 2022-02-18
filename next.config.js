@@ -10,4 +10,5 @@ module.exports = withPWA({
     runtimeCaching,
     buildExcludes: [/middleware-manifest.json$/],
   },
+  pageExtensions: ["page.tsx", "page.ts", "page.jsx", "page.js"],
 });

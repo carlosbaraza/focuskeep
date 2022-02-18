@@ -20,7 +20,7 @@ export const Container: FC<Props> = (props) => {
 
         .inner {
           display: flex;
-          max-width: var(--size-16);
+          max-width: var(--size-17);
           flex-grow: 1;
         }
       `}</style>

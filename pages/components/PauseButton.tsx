@@ -14,7 +14,7 @@ export const PauseButton: FC<Props> = (props) => {
 
       <style jsx>{`
         .PauseButton {
-          background: var(--gray-400);
+          background: var(--gray-300);
           padding: var(--size-03);
           border-radius: var(--border-radius-full);
           width: var(--size-07);

@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { ProgressCircle } from "../common/ProgressCircle";
+import { ProgressCircle } from "../../../components/common/ProgressCircle";
 import { formatTime } from "./Task/Timer";
 import { Task, useTaskContext } from "./TasksProvider";
 

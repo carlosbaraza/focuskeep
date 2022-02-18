@@ -8,8 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { getLogoProgressSvg } from "../common/LogoProgress";
-import { useLogoContext } from "../common/LogoProvider";
+import { getLogoProgressSvg } from "../../../components/common/LogoProgress";
+import { useLogoContext } from "../../../components/common/LogoProvider";
 import { db } from "./db";
 import { TaskListStored } from "./db";
 import { TaskStored } from "./db";

@@ -26,6 +26,7 @@ export const Tasks: FC<Props> = (props) => {
 
       <style jsx>{`
         .Tasks {
+          flex-grow: 1;
         }
 
         .Tasks > :global(* + *) {

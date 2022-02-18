@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import React, { FC } from "react";
 import { FaCheck, FaRedo } from "react-icons/fa";
-import { ProgressCircle } from "../../common/ProgressCircle";
+import { ProgressCircle } from "../../../../components/common/ProgressCircle";
 
 type Props = {
   progress: number;
