@@ -16,7 +16,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no, shrink-to-fit=no, viewport-fit=cover"
         />
       </Head>
-      <Component {...pageProps} />;
+      <Component {...pageProps} />
     </>
   );
 }
